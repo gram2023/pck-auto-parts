@@ -29,6 +29,7 @@ export async function SiteHeader() {
           </Form>
           <nav aria-label="บัญชี" className="ml-auto flex items-center gap-4 text-sm md:ml-0">
             <Link href="/contact" className="hover:underline">ติดต่อร้าน</Link>
+            <Link href="/cart" className="rounded-md bg-white/10 px-3 py-1.5 font-semibold hover:bg-white/20">🛒 ตะกร้า <span className="sr-only">(ตัวอย่าง)</span></Link>
           </nav>
         </div>
         <nav aria-label="หมวดหมู่" className="border-t border-white/10">

@@ -56,7 +56,10 @@ export type MatchKind = "sku" | "part_number" | "oem";
 
 export type ProductFilters = {
   q?: string;
+  /** หมวดหมู่ที่ล็อกจากหน้า /category/[slug] */
   category?: string;
+  /** ตัวกรองหมวดหมู่ในหน้าค้นหา */
+  categories?: string[];
   brands?: string[];
   types?: ProductType[];
   positions?: Position[];
@@ -77,7 +80,10 @@ export type SearchResult = {
   hits: ProductHit[];
   /** เมื่อเลือกรถ: สินค้าที่ยังไม่มีข้อมูลยืนยันกับรถคันนั้น */
   unverified: ProductHit[];
+  /** เมื่อเลือกรถ: สินค้าที่ข้อมูลระบุว่าไม่รองรับรถคันนั้น */
+  notFit: ProductHit[];
   facets: {
+    categories: { id: string; name: string; count: number }[];
     brands: { id: string; name: string; count: number }[];
     types: { id: ProductType; count: number }[];
     positions: { id: Position; count: number }[];
@@ -124,6 +130,13 @@ export async function searchProducts(f: ProductFilters): Promise<SearchResult> {
 
   // 2) facet คำนวณจากขอบเขตหลัก (ก่อนใช้ตัวกรอง) เพื่อให้ตัวเลือกไม่หายไป
   const facets: SearchResult["facets"] = {
+    categories: f.category
+      ? []
+      : [...count(base.map((p) => p.categorySlug))].map(([id, n]) => ({
+          id,
+          name: categories.find((c) => c.slug === id)?.name ?? id,
+          count: n,
+        })),
     brands: [...count(base.map((p) => p.partBrandId))].map(([id, n]) => ({
       id,
       name: getPartBrand(id)?.name ?? id,
@@ -137,6 +150,7 @@ export async function searchProducts(f: ProductFilters): Promise<SearchResult> {
   // 3) ตัวกรอง
   const list = base.filter(
     (p) =>
+      (!f.categories?.length || f.categories.includes(p.categorySlug)) &&
       (!f.brands?.length || f.brands.includes(p.partBrandId)) &&
       (!f.types?.length || f.types.includes(p.type)) &&
       (!f.positions?.length || f.positions.some((pos) => p.position?.includes(pos))) &&
@@ -160,6 +174,7 @@ export async function searchProducts(f: ProductFilters): Promise<SearchResult> {
   //    กลุ่ม "ยังไม่ยืนยัน" = สินค้าที่ไม่มีข้อมูลรถเลย หรือมีข้อมูลของรุ่นเดียวกัน (ต่างปี/เครื่องยนต์)
   //    สินค้าที่มีข้อมูลเฉพาะรุ่นอื่นจะไม่แสดง (เป็นการคัดการแสดงผล ไม่ได้ยืนยันว่าใช้ไม่ได้)
   let unverified: ProductHit[] = [];
+  let notFit: ProductHit[] = [];
   if (f.vehicle) {
     const v = f.vehicle;
     const sameModel = (vehicleId: string) => {
@@ -174,10 +189,11 @@ export async function searchProducts(f: ProductFilters): Promise<SearchResult> {
         return fits.length === 0 || fits.some((ft) => sameModel(ft.vehicleId));
       })
       .map((x) => x.h);
+    notFit = checked.filter((x) => x.c === "not_fit").map((x) => x.h);
     hits = checked.filter((x) => x.c === "fits" || x.c === "conditional").map((x) => x.h);
   }
 
-  return { hits, unverified, facets };
+  return { hits, unverified, notFit, facets };
 }
 
 /** แปลงพารามิเตอร์ URL (make, model, year, engine) เป็นรถที่เลือก */

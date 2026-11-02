@@ -23,8 +23,9 @@ export function ProductCard({ hit, vehicle }: { hit: ProductHit; vehicle?: Vehic
           ตรงกับ{matchLabel[hit.match.kind]} <span className="code">{hit.match.value}</span>
         </p>
       )}
-      <div className="grid aspect-[4/3] place-items-center bg-surface text-brand/70">
+      <div className="relative grid aspect-[4/3] place-items-center bg-surface text-brand/70">
         {cat && <CategoryIcon icon={cat.icon} className="size-14" />}
+        <span className="absolute bottom-1.5 right-1.5 rounded bg-white/90 px-1.5 text-[10px] text-muted">รูปตัวอย่าง</span>
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div className="flex flex-wrap gap-1.5">
@@ -38,6 +39,7 @@ export function ProductCard({ hit, vehicle }: { hit: ProductHit; vehicle?: Vehic
         </h3>
         <dl className="grid gap-0.5 text-xs text-muted">
           <div className="flex gap-1"><dt>แบรนด์:</dt><dd className="text-ink-soft">{brand?.name}</dd></div>
+          <div className="flex gap-1"><dt>รหัส:</dt><dd className="code text-ink-soft">{p.sku}</dd></div>
           <div className="flex gap-1"><dt>เลขอะไหล่:</dt><dd className="code text-ink-soft">{p.partNumber}</dd></div>
           {positions && <div className="flex gap-1"><dt>ตำแหน่ง:</dt><dd className="text-ink-soft">{positions}</dd></div>}
         </dl>

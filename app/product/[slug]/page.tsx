@@ -16,6 +16,7 @@ import {
 import { CHECK_WITH_STORE, publishedFitments } from "@/lib/fitment";
 import { formatBaht, formatPositions, formatYears, sourceLabel, unitLabel } from "@/lib/format";
 import type { Source } from "@/lib/types";
+import { btn } from "@/lib/ui";
 
 export async function generateStaticParams() {
   return (await getAllProductSlugs()).map((slug) => ({ slug }));
@@ -27,8 +28,9 @@ export async function generateMetadata(props: PageProps<"/product/[slug]">): Pro
   return { title: `${p.name} ${p.partNumber}`, description: p.description };
 }
 
-const resultLabel = { fits: "รองรับ", conditional: "รองรับแบบมีเงื่อนไข", not_fit: "ไม่รองรับ" } as const;
-const resultCls = { fits: "text-ok", conditional: "text-warn", not_fit: "text-bad" } as const;
+// ตารางใช้ 2 ใน 3 สถานะ (ข้อมูลไม่เพียงพอ = รุ่นที่ไม่อยู่ในตาราง) — มีไอคอน + ข้อความทุกครั้ง
+const resultLabel = { fits: "✓ รองรับ", conditional: "✓ รองรับ (มีเงื่อนไข)", not_fit: "✕ ไม่รองรับ" } as const;
+const resultCls = { fits: "text-ok", conditional: "text-ok", not_fit: "text-bad" } as const;
 
 function SourceTag({ s }: { s: Source }) {
   return (
@@ -58,13 +60,15 @@ export default async function ProductPage(props: PageProps<"/product/[slug]">) {
         {p.name}
       </nav>
 
-      <div className="mt-4 grid gap-8 lg:grid-cols-[1fr_420px]">
-        {/* รูป + รายละเอียด */}
-        <div className="grid gap-8">
-          <div className="grid aspect-[16/10] place-items-center rounded-lg bg-surface text-brand/60">
-            {cat && <CategoryIcon icon={cat.icon} className="size-28" />}
-            <span className="sr-only">ยังไม่มีรูปสินค้า</span>
-          </div>
+      {/* มือถือ: รูป → กล่องซื้อ → รายละเอียด · จอใหญ่: ซ้าย รูป+รายละเอียด / ขวา กล่องซื้อ */}
+      <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_420px] lg:gap-x-8">
+        <div className="relative grid aspect-[16/10] place-items-center rounded-lg bg-surface text-brand/60 lg:col-start-1">
+          {cat && <CategoryIcon icon={cat.icon} className="size-28" />}
+          <span className="absolute bottom-2 right-2 rounded bg-white/90 px-2 text-xs text-muted">รูปตัวอย่าง</span>
+        </div>
+
+        {/* รายละเอียด */}
+        <div className="grid gap-8 lg:col-start-1 lg:row-start-2">
 
           <section>
             <h2 className="text-lg font-bold">รายละเอียดสินค้า</h2>
@@ -117,7 +121,7 @@ export default async function ProductPage(props: PageProps<"/product/[slug]">) {
                             <td className="px-3 py-2">{formatPositions(f.position) || "—"}</td>
                             <td className="px-3 py-2">
                               <span className={`font-semibold ${resultCls[f.result]}`}>{resultLabel[f.result]}</span>
-                              {f.conditions && <p className="text-xs text-ink-soft">{f.conditions}</p>}
+                              {f.conditions && <p className="mt-0.5 text-xs font-medium text-warn">⚠ เงื่อนไข: {f.conditions}</p>}
                             </td>
                             <td className="px-3 py-2"><SourceTag s={f.source} /></td>
                           </tr>
@@ -158,7 +162,7 @@ export default async function ProductPage(props: PageProps<"/product/[slug]">) {
         </div>
 
         {/* กล่องซื้อ */}
-        <aside className="h-fit rounded-lg border border-line p-5 lg:sticky lg:top-44">
+        <aside className="row-start-2 h-fit rounded-lg border border-line p-5 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-44">
           <div className="flex flex-wrap gap-1.5">
             <TypeBadge type={p.type} />
             <StockBadge stock={p.stock} preorderDays={p.preorderDays} />
@@ -187,17 +191,17 @@ export default async function ProductPage(props: PageProps<"/product/[slug]">) {
           </div>
 
           <div className="mt-5 grid gap-2">
-            <button type="button" disabled
-              className="h-12 rounded-md bg-accent font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-              title="ตะกร้าสินค้าจะเปิดใช้ในเฟสถัดไป">
-              {canBuy ? (p.stock === "preorder" ? "สั่งพรีออร์เดอร์" : "เพิ่มลงตะกร้า") : "สินค้าหมด"}
-            </button>
-            <button type="button" disabled
-              className="h-12 rounded-md border-2 border-brand font-semibold text-brand disabled:cursor-not-allowed disabled:opacity-60"
-              title="แบบฟอร์มสอบถามจะเปิดใช้ในเฟสถัดไป">
+            {canBuy ? (
+              <Link href="/cart" className={btn("primary", "lg")}>
+                {p.stock === "preorder" ? "สั่งพรีออร์เดอร์" : "เพิ่มลงตะกร้า"}
+              </Link>
+            ) : (
+              <button type="button" disabled className={btn("primary", "lg")}>สินค้าหมด</button>
+            )}
+            <Link href={`/fitment-inquiry?product=${p.slug}`} className={btn("outline", "lg")}>
               สอบถามความเข้ากันได้ก่อนซื้อ
-            </button>
-            <p className="text-center text-xs text-muted">ตะกร้าและแบบฟอร์มสอบถามจะเปิดใช้ในเฟสถัดไป</p>
+            </Link>
+            <p className="text-center text-xs text-muted">แบบร่าง Demo: ตะกร้าแสดงสินค้าตัวอย่าง ยังไม่บันทึกสินค้าจริง</p>
           </div>
         </aside>
       </div>

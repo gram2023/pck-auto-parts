@@ -25,6 +25,8 @@ export async function SiteFooter() {
           <p className="font-semibold text-ink">ช่วยเหลือ</p>
           <ul className="mt-2 grid gap-1 text-muted">
             <li><Link href="/contact" className="hover:text-brand">ติดต่อร้าน</Link></li>
+            <li><Link href="/fitment-inquiry" className="hover:text-brand">ถามร้านก่อนซื้อ</Link></li>
+            <li><Link href="/design" className="hover:text-brand">ระบบดีไซน์ (แบบร่าง)</Link></li>
           </ul>
           <p className="mt-2 text-xs text-muted">คำถามที่พบบ่อย นโยบายการจัดส่ง การคืนสินค้า และการรับประกัน จะเพิ่มในเฟสถัดไป</p>
         </div>
